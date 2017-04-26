@@ -13,10 +13,136 @@
   </head>
   <body>
     <div id="content"></div>
-    <script type="text/babel" src="scripts/example.js"></script>
+    <!-- <script type="text/babel" src="scripts/example.js"></script> -->
     <script type="text/babel">
       // To get started with this tutorial running your own code, simply remove
       // the script tag loading scripts/example.js and start writing code here.
+      // 创建数据来源 JSON格式的
+      let data = [
+        {
+          id: '1',
+          author: '小红',
+          text: 'react',
+        },{
+          id: '2',
+          author: '小明',
+          text: 'react-dom',
+        }
+      ];
+      // 创建一个最简单的hello world组件
+      const CommentBox = React.createClass({
+        // 初始化state类似于vue的data函数
+        // getInitialState() 在生命周期里只执行一次，并设置组件的初始状态。
+        getInitialState() {
+          return {
+            data: [],
+          }
+        },
+        // 生命周期函数，在组件加载完成时执行
+        componentDidMount() {
+          // 调用jq的ajax函数来获取数据并赋值给this.state.data
+          $.ajax({
+            url: this.props.url,
+            dataType: 'json',
+            cache:false,
+            success: function(data) {
+              this.setState({data})
+            }.bind(this),
+            error: function (xhr, status, err) {
+              console.error(this.props.url, status, err.toString());
+            }.bind(this),
+          })
+        },
+        render() {
+          return (
+            <div className="commentBox">
+              <h1>Hello World</h1>
+              <CommentList data={this.state.data} />
+              <CommentForm />
+            </div>
+          )
+        },
+      });
+			// comment组件
+			const Comment = React.createClass({
+        rawMarkup() {
+          const md =new Remarkable();
+          const rawMarkup = md.render(this.props.children);
+          return {__html: rawMarkup}
+        },
+				render() {
+          {/* 引入markdown */}
+          const md = new Remarkable()
+					return (
+            <div className="comment">
+              {/* react中{}表示里面执行JavaScript语法 */}
+              {/* 子组件通过this.props接受父组件传过来的信息 */}
+              {/* 评论必须写在大括号中 */}
+              <h3 className="commentAuthor">{this.props.author}</h3>
+              {/* this.props.children表示组件的所有子节点 */}
+              {/* `dangerouslySetInnerHTML`方法会将字符串转化为真正的html标签 */}
+              <span dangerouslySetInnerHTML={this.rawMarkup()}></span>
+            </div>
+          )
+				}
+			});
+      // 创建子组件
+      const CommentList = React.createClass({
+        render() {
+          // map函数用来遍历数据并且设置节点
+          const commentNode = this.props.data.map(function(comment) {
+            return (
+              <Comment author={comment.author} key={comment.id} >
+                {comment.text}
+              </Comment>
+            )
+          })
+          return (
+            <div className="commentList">
+              {commentNode}
+            </div>
+          )
+        }
+      });
+      const CommentForm = React.createClass({
+        // 初始化state
+        getInitialState() {
+          return {
+            author: "",
+            text: "",
+          }
+        },
+        // 处理author输入时
+        handleAuthorChange(e) {
+          this.setState({author: e.target.value})
+        },
+        // 处理text输入时
+        handleTextChange(e) {
+          this.setState({ text:e.target.value })
+        },
+        // 渲染组件
+        render() {
+          return (
+            <form className="commentForm">
+              <input type="text" placeholder="你的名字" value={this.state.author} onChange={this.handleAuthorChange}/>
+              <input type="text" placeholder="你的评论" value={this.state.text} onChange={this.handleTextChange}/>
+              <input type="submit" value="提交"/>
+            </form>
+          )
+        }
+      });
+      // 将组件渲染成html
+      ReactDOM.render(
+        // 从服务器中拿到数据
+        <CommentBox url="/api/comments"/>,
+        // <CommentBox data={data} />,
+        document.getElementById("content")
+      );
     </script>
+    <style>
+      .commentBox {
+        /*background-color: red;*/
+      }
+    </style>
   </body>
 </html>
